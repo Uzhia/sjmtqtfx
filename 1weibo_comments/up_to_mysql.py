@@ -22,8 +22,7 @@ with open('D:/Download/test.csv', 'r', encoding='utf-8-sig') as csvfile:
     for row in csvreader:
         # 插入数据到数据库
         cursor.execute(
-            "INSERT INTO lg_cup_comments (id, weibo_id, user_id, text, comment_user_id, comment_user_name) "
-            "VALUES (%s, %s, %s, %s, %s, %s)",
+            "INSERT INTO comments0212 (id, weibo_id, user_id, text, comment_user_id, comment_user_name) VALUES (%s, %s, %s, %s, %s, %s)",
             (row['id'], row['weibo_id'], row['user_id'], row['text'], row['comment_user_id'], row['comment_user_name'])
         )
 

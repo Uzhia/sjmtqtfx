@@ -4,7 +4,7 @@ import json
 import random
 from weibo_comments.items import WeiboCommentsItem as CommentItem
 
-
+# 将浏览器cookie转成scrapy.Request能用的cookie
 def parse_cookie_string(cookie_str):
     cookies = {}
     for cookie in cookie_str.split(';'):
@@ -21,7 +21,7 @@ class WeiboCommentsSpider(scrapy.Spider):
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
         'Referer': 'https://weibo.com/',
     }
-    long_cookie = ''
+    long_cookie = 'SCF=AhUdovS0ggRpOtqn-px0744OfvdDgHTN5O85leNxW-_R2Pl2P61GawDunqsjbdjqLm4Xq0RaZ33RDORYNKVuhoU.; SINAGLOBAL=805671649067.7362.1736321112007; SUBP=0033WrSXqPxfM725Ws9jqgMF55529P9D9WW5ZTspo2oWpcvVL9qF19C55JpX5KMhUgL.FoMXe0nRe0zNeKe2dJLoI7HHwJyDqBtt; ALF=1741781186; SUB=_2A25KrZuSDeRhGeFK6FoZ8yzLyj-IHXVpwpFarDV8PUJbkNB-LVXskW1NQ3LPM0o20LCftJjUvm_zdoq-AXn_vl1_; XSRF-TOKEN=vCQpop70MeYjxPUBxMoOwJnp; _s_tentry=weibo.com; Apache=4895732301924.331.1739331027537; ULV=1739331027539:4:1:1:4895732301924.331.1739331027537:1737880941442; WBPSESS=oPK2z_jOcEZSpNkg6j380nyVoZnwGmfCQl_oIIFriUbU4vnICVYnAL4Po1cMOZ4siJmxBjQ7hsHHyX0yN3_gxOWK_ZR9mj7jEPhwT3Qaf9DRpW_pMgH9H5kJ_CRs6-zfJDDJeo5Da7Ef9mpWJ9FhyA=='
     cookies = parse_cookie_string(long_cookie)
 
     # 新增配置
@@ -36,19 +36,21 @@ class WeiboCommentsSpider(scrapy.Spider):
     }
 
     def start_requests(self):
+        # 创建 PyMySQL 连接
         connection = pymysql.connect(
-            host='localhost',
+            host='localhost', # 或者是数据库主机地址
             user='root',
             password='6',
             database='weibo',
             charset='utf8mb4',
             cursorclass=pymysql.cursors.DictCursor
         )
-        table_name = "lg_cup"
-        comments_table_name = "lg_cup_comments0210"
+        table_name = "weibo0212"
+        comments_table_name = "comments0212"
 
         try:
             with connection.cursor() as cursor:
+                # 查询微博表中所有有评论的记录
                 sql = f"""
                 SELECT `id`, `user_id`, `comments_count` 
                 FROM `{table_name}`
@@ -87,23 +89,23 @@ class WeiboCommentsSpider(scrapy.Spider):
         meta = response.meta
         try:
             data = response.json()
-            comments = data.get('data', [])
+            comments = data.get('data', []) # 使用get方法防止键不存在时报错
 
             # 立即提交item
             for comment_data in comments:
                 text_raw = comment_data.get('text_raw')
-                if text_raw:
+                if text_raw: # 确保text_raw存在
                     user_info = comment_data.get('user', {})
                     yield CommentItem(
                         id=comment_data.get('id'),
                         weibo_id=meta['weibo_id'],
                         user_id=meta['user_id'],
-                        text=text_raw,
-                        comment_user_id=user_info.get('id'),
-                        comment_user_name=user_info.get('screen_name')
+                        text=text_raw, # 只使用text_raw作为评论文本
+                        comment_user_id=user_info.get('id'), # 添加评论用户的ID
+                        comment_user_name=user_info.get('screen_name') # 添加评论用户的昵称
                     )
 
-            max_id = data.get('max_id', 0)
+            max_id = data.get('max_id', 0) # 很奇怪，为什么会出现max_id为None的情况？
             if max_id and max_id > 0:
                 # 动态调整请求参数
                 next_url = f'https://weibo.com/ajax/statuses/buildComments?flow=0&is_reload=1&id={meta["weibo_id"]}&is_show_bulletin=3&is_mix=0&max_id={max_id}&count=20&uid={meta["user_id"]}'

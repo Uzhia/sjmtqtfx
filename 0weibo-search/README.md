@@ -107,7 +107,7 @@ MONGO_URI是MongoDB数据库的配置；<br>
 MYSQL开头的是MySQL数据库的配置。
 ### 14.运行程序
 ```bash
-$ scrapy crawl search -s JOBDIR=crawls/search
+scrapy crawl search -s JOBDIR=crawls/search
 ```
 其实只运行“scrapy crawl search”也可以，只是上述方式在结束时可以保存进度，下次运行时会在程序上次的地方继续获取。注意，如果想要保存进度，请使用“Ctrl + C”**一次**，注意是**一次**。按下“Ctrl + C”一次后，程序会继续运行一会，主要用来保存获取的数据、保存进度等操作，请耐心等待。下次再运行时，只要再运行上面的指令就可以恢复上次的进度。如果再次运行没有结果，可能是进度没有正确保存，可以先删除crawls文件夹内的进度文件，再运行上述命令。
 ## 如何获取cookie

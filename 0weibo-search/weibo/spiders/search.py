@@ -823,6 +823,6 @@ class SearchSpider(scrapy.Spider):
                     else:
                         weibo['user_authentication'] = '普通用户'
                 # 打印解析后的微博数据（调试用途）
-                print(weibo)
+                # print(weibo)
                 # 生成并返回包含微博数据和关键词的字典
                 yield {'weibo': weibo, 'keyword': keyword}
