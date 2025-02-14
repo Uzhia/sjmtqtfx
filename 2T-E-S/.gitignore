@@ -1,4 +1,3 @@
 *.csv
 *.xlsx
-api.txt
-api.py
+*.txt

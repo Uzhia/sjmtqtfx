@@ -34,9 +34,12 @@ def weibo_text_processing(text, stopwords):
     return result
 if __name__ == "__main__":
     texts = []
+    ids = []  # 新增一个列表用于存储id
+
     # 示例停用词表（需替换为实际停用词文件）
     with open('cn_stopwords.txt', 'r', encoding='utf-8') as f:
         stopwords = set([line.strip() for line in f])
+
     import pymysql
 
     # 数据库连接信息
@@ -55,15 +58,15 @@ if __name__ == "__main__":
     try:
         # 创建游标对象
         with connection.cursor() as cursor:
-            # 查询语句
-            sql = "SELECT `text` FROM `weibo0212`"
+            sql = "SELECT `id`, `text` FROM `weibo0212`"
             cursor.execute(sql)
 
             # 获取查询结果
             results = cursor.fetchall()
 
-            # 提取所有文本内容
+            # 提取所有文本内容和id
             texts_from_db = [row['text'] for row in results if row['text'] is not None]
+            ids_from_db = [row['id'] for row in results if row['text'] is not None]  # 提取id
 
     finally:
         # 关闭数据库连接
@@ -75,18 +78,16 @@ if __name__ == "__main__":
         if i == 1:
             print(processed)
             i += 1
-        # 预期输出可能包含：['测试链接', 'span', '内容', '换行', '内容']
         texts.append(processed)
-
 
     # 创建词典
     dictionary = corpora.Dictionary(texts)
     dictionary.filter_extremes(no_below=2, no_above=0.8)  # 过滤低频和高频词
 
     # 将分词后的文本转换为词典中的词 ID
-    corpus = [dictionary.doc2bow(text) for text in texts]
+    corpus = [dictionary.doc2bow(text) for text in texts   ]
 
-    # 训练 LDA 模型
+ # 训练 LDA 模型
     lda_model = LdaModel(
         corpus=corpus,
         id2word=dictionary,
@@ -114,8 +115,8 @@ if __name__ == "__main__":
 
     # 创建一个DataFrame来存储结果
     data = {
-        '原始文本': texts_from_db,
-        '主导主题': dominant_topics,
+        'id': ids_from_db,  # 将原始文本替换为id
+        'theme_id': dominant_topics,
         '主题分布': topic_distributions,
         '主题关键词': [topic_keywords[topic_id] for topic_id in dominant_topics]
     }
@@ -123,7 +124,7 @@ if __name__ == "__main__":
     df = pd.DataFrame(data)
 
     # 将DataFrame导出为CSV文件
-    df.to_csv('lda_results.csv', index=False, encoding='utf-8-sig')
+    df.to_csv('0_lda_results.csv', index=False, encoding='utf-8-sig')
 
     print("结果已成功导出到 'lda_results.csv' 文件中。")
 
